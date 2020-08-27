@@ -1,0 +1,53 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: html_document
+---
+
+## Loading and preprocessing the data
+```{r}
+activity <-read.csv("activity.csv")
+```
+
+## What is mean total number of steps taken per day?
+```{r}
+steps_sum <- aggregate(steps ~ date, data = activity, sum)
+hist(steps_sum$steps, xlab = "Steps per day", main = "Steps Taken per Day")
+abline(v = median(steps_sum$steps), col ="blue")
+abline(v = mean(steps_sum$steps), col ="red")
+mean(steps_sum$steps)
+median(steps_sum$steps)
+```
+
+## What is the average daily activity pattern?
+```{r}
+interval_sum <- aggregate( steps ~ interval, data = activity, mean)
+plot(steps ~ interval, data = interval_sum, type = "l")
+max_steps <- subset(interval_sum, interval_sum$steps == max(interval_sum$steps))
+max_steps$ interval
+```
+
+## Imputing missing values
+```{r}
+summary(is.na(activity))
+newactivity <- activity
+sapply(unique(activity$interval),function(x)
+  newactivity[is.na(activity$steps) & (newactivity$interval == x),1] <<- interval_sum$steps[interval_sum$interval == x])
+```
+```{r}
+new_steps_sum <- aggregate(steps ~ date, data = newactivity, sum)
+hist(new_steps_sum$steps, xlab = "Steps per day", main = "Steps Taken per Day")
+abline(v = median(new_steps_sum$steps), col ="blue")
+abline(v = mean(new_steps_sum$steps), col ="red")
+mean(new_steps_sum$steps)
+median(new_steps_sum$steps)
+```
+
+## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+library(ggplot2)
+newactivity$weekday <- "weekday"
+newactivity$weekday[weekdays(as.Date(newactivity$date)) %in% c("Saturday", "Sunday")] <- "weekend"
+weekday_sum <- aggregate(steps ~ interval + weekday, data= newactivity, mean)
+g <- ggplot(weekday_sum,mapping = aes(interval,steps))
+g + geom_line() + facet_grid(cols= vars(weekday))
+```
